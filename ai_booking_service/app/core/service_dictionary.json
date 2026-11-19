@@ -1,0 +1,150 @@
+{
+  "services": {
+    "car_wash": {
+      "display_name": "Car Wash",
+      "category": "automotive",
+      "aliases": [
+        "car wash",
+        "car washing",
+        "wash my car",
+        "vehicle cleaning",
+        "car cleaning",
+        "auto wash",
+        "auto spa",
+        "car detailing"
+      ]
+    },
+    "plumbing": {
+      "display_name": "Plumbing",
+      "category": "home_maintenance",
+      "aliases": [
+        "plumber",
+        "plumbing",
+        "water leakage",
+        "water leak",
+        "pipe repair",
+        "pipe leak",
+        "tap repair",
+        "sink leak",
+        "drainage repair"
+      ]
+    },
+    "ac_repair": {
+      "display_name": "AC Repair",
+      "category": "appliance",
+      "aliases": [
+        "ac repair",
+        "ac service",
+        "ac servicing",
+        "air conditioner repair",
+        "air conditioner service",
+        "air conditioning repair",
+        "ac gas refill",
+        "ac mechanic",
+        "ac technician"
+      ]
+    },
+    "electrical": {
+      "display_name": "Electrical Repair",
+      "category": "home_maintenance",
+      "aliases": [
+        "electrician",
+        "electrical",
+        "electrical repair",
+        "wiring repair",
+        "electrical service",
+        "switchboard repair",
+        "power issue",
+        "fan repair"
+      ]
+    },
+    "home_cleaning": {
+      "display_name": "Home Cleaning",
+      "category": "cleaning",
+      "aliases": [
+        "home cleaning",
+        "house cleaning",
+        "deep cleaning",
+        "room cleaning",
+        "clean my house",
+        "clean my home",
+        "maid service",
+        "kitchen cleaning"
+      ]
+    },
+    "appliance_repair": {
+      "display_name": "Appliance Repair",
+      "category": "appliance",
+      "aliases": [
+        "appliance repair",
+        "washing machine repair",
+        "fridge repair",
+        "refrigerator repair",
+        "microwave repair",
+        "tv repair"
+      ]
+    }
+  },
+  "locations": {
+    "aluva": {
+      "display_name": "Aluva",
+      "aliases": ["aluva", "alwaye"],
+      "latitude": 10.1076,
+      "longitude": 76.3516
+    },
+    "kochi": {
+      "display_name": "Kochi",
+      "aliases": ["kochi", "cochin", "kochin"],
+      "latitude": 9.9312,
+      "longitude": 76.2673
+    },
+    "ernakulam": {
+      "display_name": "Ernakulam",
+      "aliases": ["ernakulam", "mg road", "south ernakulam"],
+      "latitude": 9.9816,
+      "longitude": 76.2999
+    },
+    "kakkanad": {
+      "display_name": "Kakkanad",
+      "aliases": ["kakkanad", "infopark"],
+      "latitude": 10.0159,
+      "longitude": 76.3419
+    },
+    "edappally": {
+      "display_name": "Edappally",
+      "aliases": ["edappally", "edapally", "lulu mall"],
+      "latitude": 10.0261,
+      "longitude": 76.3125
+    },
+    "kalamassery": {
+      "display_name": "Kalamassery",
+      "aliases": ["kalamassery", "kalamasery"],
+      "latitude": 10.0553,
+      "longitude": 76.3219
+    },
+    "kaloor": {
+      "display_name": "Kaloor",
+      "aliases": ["kaloor"],
+      "latitude": 9.9942,
+      "longitude": 76.2921
+    },
+    "vyttila": {
+      "display_name": "Vyttila",
+      "aliases": ["vyttila", "vytilla"],
+      "latitude": 9.9685,
+      "longitude": 76.3182
+    },
+    "fort_kochi": {
+      "display_name": "Fort Kochi",
+      "aliases": ["fort kochi", "fort cochin"],
+      "latitude": 9.9658,
+      "longitude": 76.2421
+    },
+    "tripunithura": {
+      "display_name": "Tripunithura",
+      "aliases": ["tripunithura", "thripunithura"],
+      "latitude": 9.9487,
+      "longitude": 76.3464
+    }
+  }
+}
