@@ -133,15 +133,19 @@ erDiagram
 
     PROVIDERS {
         string id PK "UUID (36)"
+        string listing_id "Indexed (e.g. ERK-001)"
         string name "Indexed"
-        string location_name "Indexed (Aluva, Kochi...)"
-        string address "Street address"
-        float latitude "WGS84"
-        float longitude "WGS84"
+        string location_name "Indexed (Aluva, Kalamassery, Edappally...)"
+        string address "Full street address"
+        string phone_public "Nullable public contact phone"
+        float latitude "WGS84 locality coordinate"
+        float longitude "WGS84 locality coordinate"
         float rating "Nullable (never fabricated)"
         int review_count "Default 0"
         string work_start_time "HH:MM (default 09:00)"
         string work_end_time "HH:MM (default 19:00)"
+        string verification_status "Nullable onboarding verification flag"
+        string source_name "Nullable listing source"
         boolean is_active "Indexed, default true"
     }
 
@@ -407,12 +411,12 @@ sequenceDiagram
         AI->>AI: NLU -> SELECT_PROVIDER (anaphoric -> results[0])
         AI->>Internal: POST /internal/availability/check (provider_service_id, slot_id)
         Internal->>DB: Verify active provider, working hours, capacity > booked_count
-        DB-->>Internal: available=true, current_price=250.0
+        DB-->>Internal: available=true, current_price=300.0
         Internal-->>AI: AvailabilityCheckResponse
         AI->>AI: FSM: OPTIONS_FOUND -> PROVIDER_SELECTED -> AWAITING_CONFIRMATION
-        AI->>Internal: PUT /internal/conversations/{id} (selected_provider, expected_price=250)
+        AI->>Internal: PUT /internal/conversations/{id} (selected_provider, expected_price=300)
         AI-->>Proxy: 200 OK { status: AWAITING_CONFIRMATION, requires_confirmation: true }
-        Proxy-->>User: "Do you want to confirm ABC Car Wash ... for ₹250?"
+        Proxy-->>User: "Do you want to confirm Amazing Carwash ... for ₹300?"
     end
 
     rect rgb(245, 240, 255)
@@ -533,7 +537,7 @@ flowchart TD
 |---|---|---|---|---|
 | **Price** | `RANK_WEIGHT_PRICE` | `0.35` | `(max_p - price) / (max_p - min_p)` (`1.0` if equal) | Always present |
 | **Distance** | `RANK_WEIGHT_DISTANCE` | `0.25` | `(max_d - dist) / (max_d - min_d)` (`1.0` if equal) | Excluded from numerator & denominator (`active_weight`) |
-| **Rating** | `RANK_WEIGHT_RATING` | `0.25` | `clamp(rating / 5.0, 0.0, 1.0)` | Excluded from numerator & denominator (e.g., `Budget Shine Cleaners` with `rating=None`) |
+| **Rating** | `RANK_WEIGHT_RATING` | `0.25` | `clamp(rating / 5.0, 0.0, 1.0)` | Excluded from numerator & denominator (e.g., unrated listings like `Electro Tech Home Appliance Services` with `rating=None`) |
 | **Availability** | `RANK_WEIGHT_AVAILABILITY` | `0.15` | `1.0` if `available && slot_id` else `0.0` | Always evaluated |
 
 ---
@@ -578,7 +582,7 @@ agentic/
 │   │   ├── models.py                   # 7 SQLAlchemy ORM models with CHECK & UNIQUE constraints
 │   │   ├── schemas.py                  # Public & internal Pydantic v2 contracts
 │   │   ├── security.py                 # PBKDF2-SHA256 (200k), HS256 JWT, constant-time X-Internal-Token
-│   │   ├── seed.py                     # Idempotent demo seeder (2 users, 6 services, 12 providers, 7d slots)
+│   │   ├── seed.py                     # Idempotent seeder (2 demo users, 6 services, 33 Ernakulam/Kochi providers, 44 offerings, 7d slots)
 │   │   ├── api/
 │   │   │   ├── auth.py                 # /api/v1/auth/register, /login, /me
 │   │   │   ├── public.py               # /api/v1/services, /providers, /bookings, /chat/* gateway proxy
@@ -716,7 +720,8 @@ cd ai_booking_service
 - **Seeded Demo Accounts**:
   - `alice@example.com` / `Password123!`
   - `bob@example.com` / `Password123!`
-- **Seeded Catalog**: 6 services, 12 Kochi/Aluva-area providers (including 1 intentionally unrated provider `Budget Shine Cleaners` to verify zero rating fabrication), and 8 daily 1-hour slots (`09:00`–`12:00`, `14:00`–`17:00`, capacity `1`) for `today` through `today + 7 days`.
+- **Seeded Catalog**: 6 services, **33 Ernakulam/Kochi/Aluva-area providers** (**44 service offerings** — including unrated listings with `rating=None` to verify zero rating fabrication, plus `listing_id`, `phone_public`, `verification_status`, and `source_name`), and 8 daily 1-hour slots (`09:00`–`12:00`, `14:00`–`17:00`, capacity `1`) for `today` through `today + 7 days` (**2,112 total slots**).
+  - Default INR base prices by category: Car Wash (`₹300`, 60m), Electrical Repair (`₹300`, 60m), Plumbing (`₹350`, 60m), Appliance Repair (`₹450`, 60m), AC Repair (`₹500`, 60m), Home Cleaning (`₹750`, 120m).
 
 ---
 
@@ -779,7 +784,7 @@ cd ai_booking_service
   "success": true,
   "conversation_id": "a6f7f8c0-...",
   "status": "OPTIONS_FOUND",
-  "message": "I found 2 available providers for 2026-11-20 at 2:00 PM. The cheapest option is ABC Car Wash for ₹250. Say 'Book that one' or pick a provider (e.g., 'Book the second provider') to proceed.",
+  "message": "I found 9 available providers for 2026-11-20 at 2:00 PM. The cheapest option is Amazing Carwash for ₹300. Say 'Book that one' or pick a provider (e.g., 'Book the second provider') to proceed.",
   "intent": {
     "type": "FIND_CHEAPEST",
     "confidence": 0.93,
@@ -796,12 +801,18 @@ cd ai_booking_service
     "providers": [
       {
         "provider_id": "...",
-        "provider_name": "ABC Car Wash",
+        "listing_id": "ERK-001",
+        "provider_name": "Amazing Carwash",
         "location_name": "Aluva",
+        "address": "Near Power House, near Amazing Hypermarket L, Aluva, Kerala 683101",
+        "phone_public": null,
         "distance_km": 0.0,
-        "rating": 4.6,
+        "rating": 4.0,
+        "review_count": 289,
+        "verification_status": "public_listing_found_verify_before_onboarding",
+        "source_name": "Google business listing",
         "provider_service_id": "...",
-        "price": 250.0,
+        "price": 300.0,
         "currency": "INR",
         "slot_id": "...",
         "slot_date": "2026-11-20",
@@ -809,7 +820,7 @@ cd ai_booking_service
         "end_time": "15:00",
         "available": true,
         "ranking_score": 1.0,
-        "ranking_explanation": "Ranked #1 by lowest price (INR 250, available)."
+        "ranking_explanation": "Ranked #1 by lowest price (INR 300, available)."
       }
     ],
     "sort_by": "price"
@@ -841,14 +852,14 @@ cd ai_booking_service
 
 ### Pytest Suites
 ```powershell
-# 1. AI Microservice unit & integration tests
+# 1. AI Microservice unit & integration tests (41 tests)
 #    Covers: 13 intents, entity extraction, typos, date ambiguities, ranking, 12-state FSM, end-to-end booking flows
-.\.venv\Scripts\pytest.exe ai_booking_service\tests -v
+.\.venv\Scripts\python.exe -m pytest ai_booking_service\tests -v
 
-# 2. Main Backend concurrency, security & persistence tests
+# 2. Main Backend concurrency, security & persistence tests (5 tests)
 #    Covers: multi-threaded SQLite BEGIN IMMEDIATE race conditions, idempotency replay/conflict,
 #            price change rollback, cancellation slot release, JWT & X-Internal-Token enforcement
-.\.venv\Scripts\pytest.exe main_backend\tests -v
+.\.venv\Scripts\python.exe -m pytest main_backend\tests -v
 ```
 
 ### Locust Load Testing
