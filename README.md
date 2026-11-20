@@ -277,8 +277,8 @@ flowchart TD
 | 7 | `FIND_NEAREST` | `0.93` | `"Find the nearest plumber in Kochi tomorrow at 10 AM"` |
 | 8 | `CHECK_AVAILABILITY` | `0.90` | `"Check availability for AC repair tomorrow at 11 AM"` |
 | 9 | `BOOK_SERVICE` | `0.91` | `"Book an electrician near Kakkanad tomorrow at 4 PM"` |
-| 10 | `FIND_PROVIDER` | `0.88` | `"Find providers near Edappally"` |
-| 11 | `SEARCH_SERVICE` | `0.90` / `0.85` / `0.60` | `"I need home cleaning"`, `"Tomorrow at 2 PM"` (slot-filling follow-up) |
+| 10 | `FIND_PROVIDER` | `0.88` | `"List all the car wash centres"`, `"Find providers near Edappally"` |
+| 11 | `SEARCH_SERVICE` | `0.90` / `0.85` / `0.60` | `"List all the plumbers near me"`, `"I need home cleaning"`, `"Tomorrow at 2 PM"` (slot-filling follow-up) |
 | 12 | `GENERAL_QUERY` | `0.90` | `"Hi"`, `"Help"`, `"What services do you support?"` |
 | 13 | `UNKNOWN_INTENT` | `0.25` | Unrecognized non-booking utterances |
 
@@ -298,7 +298,7 @@ stateDiagram-v2
     [*] --> INITIAL : New Conversation Created
 
     INITIAL --> COLLECTING_INFORMATION : Missing service / date / time or Ambiguity
-    INITIAL --> READY_TO_SEARCH : All required fields present
+    INITIAL --> READY_TO_SEARCH : All required fields present or list-all browse query
     INITIAL --> CANCELLED : Cancel request
     INITIAL --> EXPIRED : TTL exceeded
 
@@ -866,8 +866,8 @@ cd ai_booking_service
 
 ### Pytest Suites
 ```powershell
-# 1. AI Microservice unit & integration tests (42 tests)
-#    Covers: 13 intents, entity extraction, typos, date ambiguities, ranking, 12-state FSM, user GPS location, end-to-end booking flows
+# 1. AI Microservice unit & integration tests (44 tests)
+#    Covers: 13 intents, list-all browse queries, entity extraction, typos, date ambiguities, ranking, 12-state FSM, user GPS location, end-to-end booking flows
 .\.venv\Scripts\python.exe -m pytest ai_booking_service\tests -v
 
 # 2. Main Backend concurrency, security & persistence tests (6 tests)

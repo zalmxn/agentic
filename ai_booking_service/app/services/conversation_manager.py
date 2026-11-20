@@ -571,6 +571,28 @@ class ConversationManager:
         if parsed.entities.max_distance_km is not None:
             context["max_distance_km"] = parsed.entities.max_distance_km
 
+        # If user explicitly asked to browse/list all providers, reset stale filters not specified in this turn
+        if parsed.entities.list_all:
+            if not parsed.entities.service:
+                context.pop("service", None)
+                context.pop("service_display", None)
+                context.pop("service_category", None)
+            if not parsed.entities.location and not parsed.entities.near_me:
+                context.pop("target_location", None)
+                if context.get("user_latitude") is None:
+                    context.pop("location", None)
+                    context.pop("latitude", None)
+                    context.pop("longitude", None)
+                else:
+                    context["location"] = context.get("user_location_label") or "Current Location"
+                    context["latitude"] = context["user_latitude"]
+                    context["longitude"] = context["user_longitude"]
+            if not parsed.entities.date:
+                context.pop("date", None)
+            if not parsed.entities.time:
+                context.pop("time", None)
+            context["sort_by"] = parsed.sort_by
+
         # Preserve explicit ranking preference across turns
         if parsed.sort_by != "best" or "sort_by" not in context:
             context["sort_by"] = parsed.sort_by
@@ -601,8 +623,9 @@ class ConversationManager:
             if "location" not in missing:
                 missing.insert(0, "location")
             reply = (
-                "Please share your location or area name (for example, Aluva, Kochi, Kakkanad, or Edappally) "
-                "so I can find nearby providers."
+                "Please share your current location (click 'Use My GPS' or choose your area in the "
+                "Your Current Location panel, or type an area like Aluva, Kalamassery, Edappally, or Kochi) "
+                "so I can list nearby providers."
             )
             self._append_history(context, "assistant", reply)
             await self.repository.save(record, authorization=authorization, request_id=request_id)
@@ -614,6 +637,11 @@ class ConversationManager:
                 intent=self._build_intent_summary(parsed, context),
                 missing_fields=missing,
             )
+
+        # Direct browse/listing request ("list all the car wash centres", "list all the plumbers near me")
+        # Return all matching providers immediately without forcing date & time first
+        if parsed.entities.list_all:
+            return await self._execute_search(record, parsed, authorization, request_id, list_all=True)
 
         missing = self._compute_missing_fields(context)
 
@@ -696,6 +724,7 @@ class ConversationManager:
         request_id: str | None,
         prefix_note: str = "",
         preferred_provider_id: str | None = None,
+        list_all: bool = False,
     ) -> AssistantResponse:
         context = record.context
         self._transition(record, ConversationState.READY_TO_SEARCH)
@@ -718,6 +747,7 @@ class ConversationManager:
             max_price=context.get("max_price"),
             max_distance_km=context.get("max_distance_km"),
             filter_by_location_name=bool(has_user_gps and target_loc),
+            limit=50 if list_all else None,
             request_id=request_id,
         )
 
@@ -725,9 +755,15 @@ class ConversationManager:
             self._transition(record, ConversationState.COLLECTING_INFORMATION)
             context["search_results"] = []
             loc_str = f" near {context['location']}" if context.get("location") else ""
+            when_parts = []
+            if context.get("date"):
+                when_parts.append(f"on {context['date']}")
+            if context.get("time"):
+                when_parts.append(f"at {_format_time_display(context['time'])}")
+            when_str = (" " + " ".join(when_parts)) if when_parts else ""
             reply = (
                 f"{prefix_note}I couldn't find available {context.get('service_display', 'service')} providers"
-                f"{loc_str} on {context.get('date')} at {_format_time_display(context.get('time'))}. "
+                f"{loc_str}{when_str}. "
                 "Would you like to try a different time, date, or nearby area?"
             )
             self._append_history(context, "assistant", reply)
@@ -779,11 +815,26 @@ class ConversationManager:
         else:
             lead = f"The top match is {top.provider_name}{dist_from_user} for {price_txt}"
 
-        reply = (
-            f"{prefix_note}I found {count} available provider{'s' if count != 1 else ''} "
-            f"for {context.get('date')} at {time_txt}. {lead}. "
-            "Say 'Book that one' or pick a provider (e.g., 'Book the second provider') to proceed."
-        )
+        if list_all and (not context.get("date") or not context.get("time")):
+            svc_label = context.get("service_display") or "service"
+            loc_suffix = ""
+            if target_loc:
+                loc_suffix = f" in {target_loc}"
+            elif has_user_gps:
+                loc_suffix = f" near {context.get('user_location_label', 'your location')}"
+            elif context.get("location"):
+                loc_suffix = f" near {context['location']}"
+            reply = (
+                f"{prefix_note}Here are all {count} available {svc_label} provider{'s' if count != 1 else ''}"
+                f"{loc_suffix}. {lead}. "
+                "Select any provider (e.g., 'Book option 1') or tell me your preferred date & time."
+            )
+        else:
+            reply = (
+                f"{prefix_note}I found {count} available provider{'s' if count != 1 else ''} "
+                f"for {context.get('date')} at {time_txt}. {lead}. "
+                "Say 'Book that one' or pick a provider (e.g., 'Book the second provider') to proceed."
+            )
 
         response_data: dict[str, Any] = {"providers": serialized, "sort_by": sort_by}
         if has_user_gps:

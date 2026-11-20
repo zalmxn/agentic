@@ -31,6 +31,7 @@ class SearchCoordinator:
         max_price: float | None = None,
         max_distance_km: float | None = None,
         filter_by_location_name: bool = False,
+        limit: int | None = None,
         request_id: str | None = None,
     ) -> list[ProviderOption]:
         send_location_name = (
@@ -48,7 +49,7 @@ class SearchCoordinator:
             "sort_by": sort_by,
             "max_price": max_price,
             "max_distance_km": max_distance_km,
-            "limit": self.max_results,
+            "limit": limit or self.max_results,
             "include_unavailable": False,
         }
         payload = {k: v for k, v in payload.items() if v is not None}

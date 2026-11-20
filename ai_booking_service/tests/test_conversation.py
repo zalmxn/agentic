@@ -327,3 +327,37 @@ async def test_user_current_location_returned_and_used_for_near_me():
     assert "from Kalamassery" in res.message
     assert res.data["providers"][0]["latitude"] == 10.1076
     assert res.data["providers"][0]["longitude"] == 76.3516
+
+
+@pytest.mark.asyncio
+async def test_list_all_providers_returns_results_without_requiring_datetime():
+    manager, _ = _make_manager()
+    auth = "Bearer user-alice"
+    ref_now = datetime(2026, 11, 19, 10, 0, tzinfo=timezone(timedelta(hours=5, minutes=30)))
+
+    # "list all the car wash centres" should return OPTIONS_FOUND immediately with no date/time needed
+    r1 = await manager.handle_message(
+        message="list all the car wash centres",
+        authorization=auth,
+        reference_now=ref_now,
+    )
+    assert r1.success is True
+    assert r1.status == ConversationState.OPTIONS_FOUND.value
+    assert len(r1.data["providers"]) == 2
+    assert "Here are all 2 available Car Wash providers" in r1.message
+
+    # "list all the plumbers near me" with user GPS sorts by distance and returns user_location
+    r2 = await manager.handle_message(
+        message="list all the plumbers near me",
+        authorization=auth,
+        conversation_id=r1.conversation_id,
+        latitude=10.0553,
+        longitude=76.3219,
+        location_label="Kalamassery",
+        reference_now=ref_now,
+    )
+    assert r2.success is True
+    assert r2.status == ConversationState.OPTIONS_FOUND.value
+    assert r2.data["sort_by"] == "distance"
+    assert r2.data["user_location"]["label"] == "Kalamassery"
+    assert len(r2.data["providers"]) == 2

@@ -155,3 +155,16 @@ def test_confirm_and_cancel_in_awaiting_confirmation(parser: IntentParser):
 
     no = parser.parse("No", current_state=ConversationState.AWAITING_CONFIRMATION, reference_now=REF_NOW)
     assert no.type == IntentType.CANCEL_BOOKING
+
+
+def test_list_all_browse_queries(parser: IntentParser):
+    cw = parser.parse("list all the car wash centres", reference_now=REF_NOW)
+    assert cw.entities.service == "car_wash"
+    assert cw.entities.list_all is True
+    assert cw.type == IntentType.FIND_PROVIDER
+
+    pl = parser.parse("list all the plumbers near me", reference_now=REF_NOW)
+    assert pl.entities.service == "plumbing"
+    assert pl.entities.near_me is True
+    assert pl.entities.list_all is True
+    assert pl.sort_by == "distance"

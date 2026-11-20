@@ -137,6 +137,14 @@ class EntityExtractor:
         if entities.provider_reference is None:
             entities.provider_reference = self._extract_provider_reference(normalized)
 
+        # 11. Browse / list-all intent cue (e.g., "list all the car wash centres", "show all plumbers near me")
+        if re.search(
+            r"\b(?:list\s+(?:all\s+)?|show\s+(?:me\s+)?all\b|display\s+(?:all\s+)?|view\s+all\b|all\s+(?:the\s+)?(?:available\s+)?(?:providers?|shops?|centres?|centers?|services?|"
+            r"car\s*wash\w*|plumb\w*|electric\w*|ac\s+repair\w*|clean\w*|appliance\w*))",
+            normalized,
+        ):
+            entities.list_all = True
+
         return entities
 
     def _detect_unresolved_location(self, normalized: str) -> str | None:

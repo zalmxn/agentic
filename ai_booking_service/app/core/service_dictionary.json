@@ -5,13 +5,19 @@
       "category": "automotive",
       "aliases": [
         "car wash",
+        "car washes",
+        "carwash",
         "car washing",
         "wash my car",
         "vehicle cleaning",
         "car cleaning",
         "auto wash",
         "auto spa",
-        "car detailing"
+        "car detailing",
+        "car wash center",
+        "car wash centers",
+        "car wash centre",
+        "car wash centres"
       ]
     },
     "plumbing": {
@@ -19,6 +25,7 @@
       "category": "home_maintenance",
       "aliases": [
         "plumber",
+        "plumbers",
         "plumbing",
         "water leakage",
         "water leak",
@@ -34,14 +41,18 @@
       "category": "appliance",
       "aliases": [
         "ac repair",
+        "ac repairs",
         "ac service",
+        "ac services",
         "ac servicing",
         "air conditioner repair",
         "air conditioner service",
         "air conditioning repair",
         "ac gas refill",
         "ac mechanic",
-        "ac technician"
+        "ac mechanics",
+        "ac technician",
+        "ac technicians"
       ]
     },
     "electrical": {
@@ -49,10 +60,12 @@
       "category": "home_maintenance",
       "aliases": [
         "electrician",
+        "electricians",
         "electrical",
         "electrical repair",
         "wiring repair",
         "electrical service",
+        "electrical services",
         "switchboard repair",
         "power issue",
         "fan repair"
@@ -69,7 +82,11 @@
         "clean my house",
         "clean my home",
         "maid service",
-        "kitchen cleaning"
+        "kitchen cleaning",
+        "home cleaners",
+        "cleaning service",
+        "cleaning services",
+        "cleaners"
       ]
     },
     "appliance_repair": {
@@ -77,6 +94,9 @@
       "category": "appliance",
       "aliases": [
         "appliance repair",
+        "appliance repairs",
+        "appliance service",
+        "appliance services",
         "washing machine repair",
         "fridge repair",
         "refrigerator repair",

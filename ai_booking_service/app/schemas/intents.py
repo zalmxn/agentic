@@ -72,6 +72,7 @@ class ExtractedEntities(BaseModel):
     provider_name: str | None = None
     provider_reference: ProviderReference | None = None
     booking_id: str | None = None
+    list_all: bool = False
     constraints: list[str] = Field(default_factory=list)
 
 

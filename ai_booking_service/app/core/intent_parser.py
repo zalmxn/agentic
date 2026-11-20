@@ -66,7 +66,7 @@ class IntentParser:
     def _determine_sort_by(self, entities) -> str:
         if entities.price_preference == "cheapest":
             return "price"
-        if entities.distance_preference == "nearest":
+        if entities.distance_preference == "nearest" or entities.near_me:
             return "distance"
         if entities.rating_preference == "highest_rated":
             return "rating"
@@ -140,13 +140,15 @@ class IntentParser:
         ):
             return IntentType.BOOK_SERVICE, 0.91
 
-        # 10. Provider search phrasing
-        if re.search(r"\b(provider|providers|technician|specialist|shop|shops|center|centers)\b", normalized):
+        # 10. Provider search / browse-all phrasing
+        if re.search(r"\b(provider|providers|technician|technicians|specialist|specialists|shop|shops|center|centers|centre|centres)\b", normalized):
             return IntentType.FIND_PROVIDER, 0.88
 
-        # 11. General service search
+        # 11. General service search or list-all browse
         if entities.service is not None:
             return IntentType.SEARCH_SERVICE, 0.90
+        if entities.list_all:
+            return IntentType.FIND_PROVIDER, 0.88
 
         # 12. Follow-up slot filling in an active conversation (e.g. "Tomorrow at 2 PM", "Aluva")
         if current_state in (
