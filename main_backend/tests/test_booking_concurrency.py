@@ -276,3 +276,56 @@ def test_internal_endpoints_require_token_and_enforce_conversation_isolation(api
         headers={**internal_headers, "Authorization": f"Bearer {bob_tok}"},
     )
     assert bob_get.status_code == 403
+
+
+def test_user_current_location_persistence_and_distance_search(api_client: TestClient, test_db_factory):
+    settings = get_settings()
+    internal_headers = {"X-Internal-Token": settings.internal_api_token}
+
+    db = test_db_factory()
+    try:
+        alice = db.query(User).filter(User.email == "alice@example.com").first()
+        alice_tok = create_access_token(alice.id, alice.email)
+    finally:
+        db.close()
+
+    auth_headers = {"Authorization": f"Bearer {alice_tok}"}
+
+    # Save Alice's current location (Kalamassery)
+    upd = api_client.put(
+        "/api/v1/auth/location",
+        headers=auth_headers,
+        json={"location_name": "Kalamassery", "latitude": 10.0553, "longitude": 76.3219},
+    )
+    assert upd.status_code == 200
+    body = upd.json()
+    assert body["current_location_name"] == "Kalamassery"
+    assert body["current_latitude"] == pytest.approx(10.0553)
+    assert body["current_longitude"] == pytest.approx(76.3219)
+
+    # Search Aluva car washes while measuring distance from Alice's location in Kalamassery
+    search_resp = api_client.post(
+        "/internal/services/search",
+        headers=internal_headers,
+        json={
+            "service_code": "car_wash",
+            "location_name": "Aluva",
+            "latitude": 10.0553,
+            "longitude": 76.3219,
+            "sort_by": "distance",
+        },
+    )
+    assert search_resp.status_code == 200
+    sdata = search_resp.json()
+    assert sdata["total_found"] >= 2
+    assert all("aluva" in p["location_name"].lower() or "aluva" in p["address"].lower() for p in sdata["providers"])
+    assert all(p["distance_km"] is not None and p["distance_km"] > 0 for p in sdata["providers"])
+
+    # Clear location
+    clr = api_client.put(
+        "/api/v1/auth/location",
+        headers=auth_headers,
+        json={"location_name": None, "latitude": None, "longitude": None},
+    )
+    assert clr.status_code == 200
+    assert clr.json()["current_latitude"] is None

@@ -301,3 +301,29 @@ def test_invalid_state_transitions_rejected():
 
     with pytest.raises(InvalidStateTransitionError):
         validate_transition(ConversationState.EXPIRED, ConversationState.OPTIONS_FOUND)
+
+
+@pytest.mark.asyncio
+async def test_user_current_location_returned_and_used_for_near_me():
+    manager, _ = _make_manager()
+    auth = "Bearer user-alice"
+    ref_now = datetime(2026, 11, 19, 10, 0, tzinfo=timezone(timedelta(hours=5, minutes=30)))
+
+    res = await manager.handle_message(
+        message="Find the nearest car wash near me tomorrow at 2 PM",
+        authorization=auth,
+        latitude=10.0553,
+        longitude=76.3219,
+        location_label="Kalamassery",
+        reference_now=ref_now,
+    )
+    assert res.success is True
+    assert res.status == ConversationState.OPTIONS_FOUND.value
+    assert res.data["user_location"] == {
+        "label": "Kalamassery",
+        "latitude": 10.0553,
+        "longitude": 76.3219,
+    }
+    assert "from Kalamassery" in res.message
+    assert res.data["providers"][0]["latitude"] == 10.1076
+    assert res.data["providers"][0]["longitude"] == 76.3516

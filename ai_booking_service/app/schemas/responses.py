@@ -26,6 +26,8 @@ class ProviderOption(BaseModel):
     location_name: str = ""
     address: str = ""
     phone_public: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
     distance_km: float | None = None
     rating: float | None = None
     review_count: int = 0

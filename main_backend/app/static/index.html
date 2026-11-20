@@ -890,6 +890,220 @@
       flex-shrink: 0;
     }
 
+    /* User -> Provider Location Route Visualization */
+    .provider-route-strip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 7px 10px;
+      background: var(--primary-soft);
+      border: 1px solid var(--primary-border);
+      border-radius: 9px;
+      font-size: 0.76rem;
+      color: var(--primary-text);
+    }
+
+    .provider-route-strip.no-origin {
+      background: var(--bg-canvas);
+      border-color: var(--border);
+      color: var(--text-secondary);
+    }
+
+    .route-endpoint {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-weight: 600;
+    }
+
+    .route-connector {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: var(--radius-pill);
+      background: #FFFFFF;
+      border: 1px solid var(--primary-border);
+      font-weight: 700;
+      font-size: 0.72rem;
+      color: var(--primary-text);
+    }
+
+    .provider-address {
+      font-size: 0.76rem;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: flex-start;
+      gap: 5px;
+      line-height: 1.35;
+    }
+
+    .provider-address i, .provider-address svg {
+      width: 13px;
+      height: 13px;
+      color: var(--text-muted);
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+
+    .provider-phone-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--primary-text);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .provider-phone-link:hover {
+      text-decoration: underline;
+    }
+
+    .provider-card-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: stretch;
+      width: 100%;
+    }
+
+    .directions-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 5px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-canvas);
+      color: var(--text-main);
+      font-size: 0.74rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all var(--transition);
+    }
+
+    .directions-link:hover {
+      background: var(--primary-soft);
+      border-color: var(--primary-border);
+      color: var(--primary-text);
+    }
+
+    .directions-link i, .directions-link svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    /* Current Location Controls & Sidebar Card */
+    .location-header-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 5px 11px;
+      border-radius: var(--radius-pill);
+      background: var(--bg-subtle);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+
+    .location-header-pill.active {
+      background: var(--primary-soft);
+      color: var(--primary-text);
+      border-color: var(--primary-border);
+    }
+
+    .location-header-pill:hover {
+      border-color: var(--primary);
+    }
+
+    .location-header-pill i, .location-header-pill svg {
+      width: 13px;
+      height: 13px;
+    }
+
+    .location-status-box {
+      padding: 9px 11px;
+      border-radius: 10px;
+      background: var(--bg-canvas);
+      border: 1px solid var(--border);
+      font-size: 0.78rem;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .location-status-box.active {
+      background: var(--mint-soft);
+      border-color: var(--mint-border);
+    }
+
+    .location-status-name {
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .location-status-coords {
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 0.71rem;
+      color: var(--text-secondary);
+    }
+
+    .location-controls-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .location-select {
+      flex: 1;
+      min-width: 0;
+      padding: 7px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-canvas);
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.8rem;
+      outline: none;
+    }
+
+    .location-select:focus {
+      border-color: var(--primary);
+      background: #FFFFFF;
+    }
+
+    .location-coords-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .location-coords-inputs input {
+      width: 100%;
+      padding: 6px 8px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-canvas);
+      color: var(--text-main);
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 0.74rem;
+      outline: none;
+    }
+
+    .location-coords-inputs input:focus {
+      border-color: var(--primary);
+      background: #FFFFFF;
+    }
+
     .provider-side {
       display: flex;
       flex-direction: column;
@@ -1635,10 +1849,16 @@
             <p>Deterministic NLU &bull; Instant provider search &amp; slot booking</p>
           </div>
         </div>
-        <span class="live-pill">
-          <span class="live-pill-dot"></span>
-          Online &amp; Ready
-        </span>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <button type="button" id="headerLocationPill" class="location-header-pill" onclick="detectBrowserLocation()" title="Click to detect your GPS location">
+            <i data-lucide="locate-fixed"></i>
+            <span id="headerLocationText">Set Current Location</span>
+          </button>
+          <span class="live-pill">
+            <span class="live-pill-dot"></span>
+            Online &amp; Ready
+          </span>
+        </div>
       </div>
 
       <!-- Quick Suggestion Chips -->
@@ -1647,6 +1867,9 @@
           <i data-lucide="zap"></i>
           Quick try:
         </span>
+        <button type="button" class="chip" onclick="sendPreset('Find the nearest car wash near me tomorrow at 2 PM')">
+          Nearest car wash near me
+        </button>
         <button type="button" class="chip" onclick="sendPreset('Find a car wash near Aluva')">
           Find a car wash near Aluva
         </button>
@@ -1690,6 +1913,57 @@
 
     <!-- RIGHT SECTION (30%): DASHBOARD SIDEBAR -->
     <aside class="dashboard-sidebar" aria-label="Assistant Inspector and Bookings">
+      <!-- Card 0: Your Current Location -->
+      <div class="dash-card">
+        <div class="dash-card-header">
+          <div class="dash-card-title">
+            <span class="dash-card-icon mint" aria-hidden="true">
+              <i data-lucide="navigation"></i>
+            </span>
+            <h3>Your Current Location</h3>
+          </div>
+          <span class="card-sub-tag">GPS / Area</span>
+        </div>
+
+        <div id="locationStatusBox" class="location-status-box">
+          <div id="locationStatusName" class="location-status-name">Not set</div>
+          <div id="locationStatusCoords" class="location-status-coords">Set your location to calculate distance to each service provider</div>
+        </div>
+
+        <div class="location-controls-row">
+          <button type="button" id="btnUseGps" class="soft-blue btn-sm" style="flex:1;" onclick="detectBrowserLocation()">
+            <i data-lucide="locate-fixed"></i>
+            Use My GPS
+          </button>
+          <button type="button" id="btnClearLoc" class="btn-sm" onclick="clearUserLocation()" title="Clear saved location">
+            <i data-lucide="x"></i>
+            Clear
+          </button>
+        </div>
+
+        <div class="location-controls-row">
+          <select id="locationPresetSelect" class="location-select" onchange="handlePresetLocationChange(this.value)" aria-label="Select your current area">
+            <option value="">Pick your area (Kochi / Ernakulam)...</option>
+            <option value="Aluva|10.1076|76.3516">Aluva (10.1076, 76.3516)</option>
+            <option value="Kalamassery|10.0553|76.3219">Kalamassery (10.0553, 76.3219)</option>
+            <option value="Edappally|10.0261|76.3125">Edappally (10.0261, 76.3125)</option>
+            <option value="Kakkanad|10.0159|76.3419">Kakkanad (10.0159, 76.3419)</option>
+            <option value="Ernakulam / Kochi|9.9816|76.2999">Ernakulam / Kochi (9.9816, 76.2999)</option>
+            <option value="Kaloor|9.9942|76.2921">Kaloor (9.9942, 76.2921)</option>
+            <option value="Vyttila|9.9685|76.3182">Vyttila (9.9685, 76.3182)</option>
+            <option value="North Paravur|10.1560|76.2650">North Paravur (10.1560, 76.2650)</option>
+            <option value="Fort Kochi|9.9658|76.2421">Fort Kochi (9.9658, 76.2421)</option>
+            <option value="Tripunithura|9.9487|76.3464">Tripunithura (9.9487, 76.3464)</option>
+          </select>
+        </div>
+
+        <div class="location-coords-inputs">
+          <input id="customLatInput" type="number" step="0.0001" placeholder="Lat (e.g. 10.1076)" aria-label="Custom latitude" />
+          <input id="customLonInput" type="number" step="0.0001" placeholder="Lon (e.g. 76.3516)" aria-label="Custom longitude" />
+          <button type="button" class="btn-sm" onclick="applyCustomCoordinates()">Set</button>
+        </div>
+      </div>
+
       <!-- Card 1: Conversation State -->
       <div class="dash-card">
         <div class="dash-card-header">
@@ -1758,6 +2032,167 @@
     let authToken = null;
     let currentUser = null;
     let conversationId = null;
+    let userLocation = null; // { label, latitude, longitude }
+
+    const KNOWN_AREAS = [
+      { label: "Aluva", latitude: 10.1076, longitude: 76.3516 },
+      { label: "Kalamassery", latitude: 10.0553, longitude: 76.3219 },
+      { label: "Edappally", latitude: 10.0261, longitude: 76.3125 },
+      { label: "Kakkanad", latitude: 10.0159, longitude: 76.3419 },
+      { label: "Ernakulam / Kochi", latitude: 9.9816, longitude: 76.2999 },
+      { label: "Kaloor", latitude: 9.9942, longitude: 76.2921 },
+      { label: "Vyttila", latitude: 9.9685, longitude: 76.3182 },
+      { label: "North Paravur", latitude: 10.1560, longitude: 76.2650 },
+      { label: "Fort Kochi", latitude: 9.9658, longitude: 76.2421 },
+      { label: "Tripunithura", latitude: 9.9487, longitude: 76.3464 },
+    ];
+
+    function haversineKmClient(lat1, lon1, lat2, lon2) {
+      const toRad = d => (d * Math.PI) / 180;
+      const R = 6371.0;
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+      return Math.round(2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 100) / 100;
+    }
+
+    function inferNearestAreaLabel(lat, lon) {
+      let best = null;
+      let bestDist = Infinity;
+      for (const area of KNOWN_AREAS) {
+        const d = haversineKmClient(lat, lon, area.latitude, area.longitude);
+        if (d < bestDist) {
+          bestDist = d;
+          best = area;
+        }
+      }
+      if (best && bestDist <= 12) {
+        return `Near ${best.label}`;
+      }
+      return "Current GPS Location";
+    }
+
+    function renderUserLocationUI() {
+      const box = document.getElementById("locationStatusBox");
+      const nameEl = document.getElementById("locationStatusName");
+      const coordsEl = document.getElementById("locationStatusCoords");
+      const headerPill = document.getElementById("headerLocationPill");
+      const headerText = document.getElementById("headerLocationText");
+      const latInput = document.getElementById("customLatInput");
+      const lonInput = document.getElementById("customLonInput");
+
+      if (userLocation && userLocation.latitude != null && userLocation.longitude != null) {
+        const latStr = Number(userLocation.latitude).toFixed(4);
+        const lonStr = Number(userLocation.longitude).toFixed(4);
+        if (box) box.classList.add("active");
+        if (nameEl) nameEl.textContent = userLocation.label || "Current Location";
+        if (coordsEl) coordsEl.textContent = `GPS: ${latStr}, ${lonStr} · Distances measured from here`;
+        if (headerPill) headerPill.classList.add("active");
+        if (headerText) headerText.textContent = `${userLocation.label || "Current Location"}`;
+        if (latInput) latInput.value = latStr;
+        if (lonInput) lonInput.value = lonStr;
+      } else {
+        if (box) box.classList.remove("active");
+        if (nameEl) nameEl.textContent = "Not set";
+        if (coordsEl) coordsEl.textContent = "Set your location to see distance to each provider";
+        if (headerPill) headerPill.classList.remove("active");
+        if (headerText) headerText.textContent = "Set Current Location";
+        if (latInput) latInput.value = "";
+        if (lonInput) lonInput.value = "";
+      }
+    }
+
+    async function persistUserLocation(loc, notify = true) {
+      userLocation = loc;
+      renderUserLocationUI();
+      if (!authToken) return;
+      try {
+        const payload = loc
+          ? { location_name: loc.label, latitude: loc.latitude, longitude: loc.longitude }
+          : { location_name: null, latitude: null, longitude: null };
+        const res = await fetch("/api/v1/auth/location", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + authToken,
+          },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) {
+          currentUser = await res.json();
+          if (notify) {
+            if (loc) {
+              showToast("success", "Location Updated", `Current location set to ${loc.label} (${loc.latitude.toFixed(4)}, ${loc.longitude.toFixed(4)}).`);
+            } else {
+              showToast("info", "Location Cleared", "Current location removed.");
+            }
+          }
+        }
+      } catch (err) {
+        if (notify) {
+          showToast("error", "Location Save Failed", "Location is active in this session but could not be saved to server.");
+        }
+      }
+    }
+
+    function detectBrowserLocation() {
+      if (!navigator.geolocation) {
+        showToast("error", "GPS Unavailable", "Your browser does not support Geolocation. Pick an area from the dropdown instead.");
+        return;
+      }
+      const btn = document.getElementById("btnUseGps");
+      if (btn) btn.disabled = true;
+      showToast("info", "Detecting Location", "Requesting your current GPS location...");
+
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          if (btn) btn.disabled = false;
+          const lat = Math.round(pos.coords.latitude * 100000) / 100000;
+          const lon = Math.round(pos.coords.longitude * 100000) / 100000;
+          const label = inferNearestAreaLabel(lat, lon);
+          const sel = document.getElementById("locationPresetSelect");
+          if (sel) sel.value = "";
+          await persistUserLocation({ label, latitude: lat, longitude: lon }, true);
+        },
+        (err) => {
+          if (btn) btn.disabled = false;
+          const reason = err.code === 1
+            ? "Location permission denied. You can select your area from the dropdown instead."
+            : "Could not determine GPS position. Please pick your area from the dropdown.";
+          showToast("error", "GPS Detection Failed", reason);
+        },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
+      );
+    }
+
+    async function handlePresetLocationChange(val) {
+      if (!val) return;
+      const [label, latStr, lonStr] = val.split("|");
+      const lat = parseFloat(latStr);
+      const lon = parseFloat(lonStr);
+      if (!Number.isNaN(lat) && !Number.isNaN(lon)) {
+        await persistUserLocation({ label, latitude: lat, longitude: lon }, true);
+      }
+    }
+
+    async function applyCustomCoordinates() {
+      const lat = parseFloat(document.getElementById("customLatInput").value);
+      const lon = parseFloat(document.getElementById("customLonInput").value);
+      if (Number.isNaN(lat) || Number.isNaN(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+        showToast("error", "Invalid Coordinates", "Enter valid latitude (-90..90) and longitude (-180..180).");
+        return;
+      }
+      const sel = document.getElementById("locationPresetSelect");
+      if (sel) sel.value = "";
+      const label = inferNearestAreaLabel(lat, lon);
+      await persistUserLocation({ label, latitude: lat, longitude: lon }, true);
+    }
+
+    async function clearUserLocation() {
+      const sel = document.getElementById("locationPresetSelect");
+      if (sel) sel.value = "";
+      await persistUserLocation(null, true);
+    }
 
     function refreshIcons() {
       if (window.lucide && typeof window.lucide.createIcons === "function") {
@@ -1926,7 +2361,50 @@
             ? `<span class="rating-pill"><i data-lucide="star" class="rating-star"></i>${Number(prov.rating).toFixed(1)} <span class="rating-reviews">(${escapeHtml(prov.review_count)} reviews)</span></span>`
             : `<span class="rating-reviews">Unrated</span>`;
 
-          const distTxt = prov.distance_km != null ? ` &bull; ${escapeHtml(prov.distance_km)} km away` : "";
+          const activeOrigin = (extra && extra.data && extra.data.user_location) || userLocation;
+          const computedDist = prov.distance_km != null
+            ? Number(prov.distance_km)
+            : (activeOrigin && prov.latitude != null && prov.longitude != null
+                ? haversineKmClient(activeOrigin.latitude, activeOrigin.longitude, prov.latitude, prov.longitude)
+                : null);
+
+          const estDriveMins = computedDist != null ? Math.max(2, Math.round((computedDist / 25) * 60)) : null;
+          const originLabel = activeOrigin ? (activeOrigin.label || "Your Location") : null;
+
+          let routeStripHtml = "";
+          if (computedDist != null && originLabel) {
+            routeStripHtml = `
+              <div class="provider-route-strip">
+                <span class="route-endpoint"><i data-lucide="locate-fixed" style="width:12px;height:12px;"></i> ${escapeHtml(originLabel)}</span>
+                <span class="route-connector">${computedDist.toFixed(2)} km · ~${estDriveMins} min</span>
+                <span class="route-endpoint"><i data-lucide="map-pin" style="width:12px;height:12px;"></i> ${escapeHtml(prov.location_name || "Provider")}</span>
+              </div>
+            `;
+          } else if (computedDist != null) {
+            routeStripHtml = `
+              <div class="provider-route-strip">
+                <span class="route-endpoint"><i data-lucide="map-pin" style="width:12px;height:12px;"></i> ${escapeHtml(prov.location_name || "Provider")}</span>
+                <span class="route-connector">${computedDist.toFixed(2)} km away</span>
+              </div>
+            `;
+          } else {
+            routeStripHtml = `
+              <div class="provider-route-strip no-origin">
+                <i data-lucide="map-pin" style="width:12px;height:12px;"></i>
+                <span>${escapeHtml(prov.location_name || "Location available")} · Set your current location to measure distance</span>
+              </div>
+            `;
+          }
+
+          let directionsUrl = null;
+          if (prov.latitude != null && prov.longitude != null) {
+            if (activeOrigin && activeOrigin.latitude != null && activeOrigin.longitude != null) {
+              directionsUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(activeOrigin.latitude + "," + activeOrigin.longitude)}&destination=${encodeURIComponent(prov.latitude + "," + prov.longitude)}`;
+            } else {
+              directionsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(prov.latitude + "," + prov.longitude)}`;
+            }
+          }
+
           const slotDate = escapeHtml(prov.slot_date || "");
           const startTime = escapeHtml(prov.start_time || "");
           const endTime = escapeHtml(prov.end_time || "");
@@ -1942,11 +2420,20 @@
               </div>
               <div class="provider-meta-row">
                 <span class="provider-meta-item">${ratingHtml}</span>
-                <span class="provider-meta-item">
-                  <i data-lucide="map-pin"></i>
-                  <span>${escapeHtml(prov.location_name)}${distTxt}</span>
-                </span>
+                ${prov.phone_public ? `
+                  <span class="provider-meta-item">
+                    <i data-lucide="phone"></i>
+                    <a class="provider-phone-link" href="tel:${escapeHtml(prov.phone_public)}">${escapeHtml(prov.phone_public)}</a>
+                  </span>
+                ` : ""}
               </div>
+              ${routeStripHtml}
+              ${prov.address ? `
+                <div class="provider-address">
+                  <i data-lucide="navigation-2"></i>
+                  <span>${escapeHtml(prov.address)}</span>
+                </div>
+              ` : ""}
               <div class="provider-slot-badge">
                 <i data-lucide="clock"></i>
                 <span>Available: ${slotLabel}</span>
@@ -1963,10 +2450,18 @@
                 <div class="price-label">Service Price</div>
                 <div class="price-tag">₹${escapeHtml(formattedPrice)}</div>
               </div>
-              <button type="button" class="primary btn-sm" onclick="sendPreset('Book option ${idx + 1}')">
-                Select
-                <i data-lucide="arrow-right"></i>
-              </button>
+              <div class="provider-card-actions">
+                <button type="button" class="primary btn-sm" onclick="sendPreset('Book option ${idx + 1}')">
+                  Select
+                  <i data-lucide="arrow-right"></i>
+                </button>
+                ${directionsUrl ? `
+                  <a class="directions-link" href="${directionsUrl}" target="_blank" rel="noopener noreferrer">
+                    <i data-lucide="map"></i>
+                    Directions
+                  </a>
+                ` : ""}
+              </div>
             </div>
           `;
           grid.appendChild(card);
@@ -2058,6 +2553,20 @@
         currentUser = data.user;
         conversationId = null;
 
+        // Restore saved current location for this user (if any)
+        if (currentUser.current_latitude != null && currentUser.current_longitude != null) {
+          userLocation = {
+            label: currentUser.current_location_name || "Current Location",
+            latitude: currentUser.current_latitude,
+            longitude: currentUser.current_longitude,
+          };
+        } else {
+          userLocation = null;
+        }
+        const presetSel = document.getElementById("locationPresetSelect");
+        if (presetSel) presetSel.value = "";
+        renderUserLocationUI();
+
         document.getElementById("userLabel").textContent = `${currentUser.full_name} (${currentUser.email})`;
         const avatarEl = document.getElementById("userAvatar");
         if (avatarEl) {
@@ -2113,13 +2622,19 @@
       addMessage("user", text);
       addTypingIndicator();
       try {
+        const payload = { message: text, conversation_id: conversationId };
+        if (userLocation && userLocation.latitude != null && userLocation.longitude != null) {
+          payload.latitude = userLocation.latitude;
+          payload.longitude = userLocation.longitude;
+          payload.location_label = userLocation.label || "Current Location";
+        }
         const res = await fetch("/api/v1/chat/message", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "Authorization": "Bearer " + authToken,
           },
-          body: JSON.stringify({ message: text, conversation_id: conversationId }),
+          body: JSON.stringify(payload),
         });
         const data = await res.json();
         removeTypingIndicator();

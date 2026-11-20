@@ -119,7 +119,7 @@ def search_providers(db: Session, req: InternalSearchRequest) -> InternalSearchR
             distance_km = haversine_km(req.latitude, req.longitude, provider.latitude, provider.longitude)
             if req.max_distance_km is not None and distance_km > req.max_distance_km:
                 continue
-        elif req.location_name:
+        if req.location_name:
             loc_lower = req.location_name.strip().lower()
             if (
                 loc_lower not in provider.location_name.lower()

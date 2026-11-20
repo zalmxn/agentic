@@ -30,11 +30,17 @@ class SearchCoordinator:
         sort_by: str = "best",
         max_price: float | None = None,
         max_distance_km: float | None = None,
+        filter_by_location_name: bool = False,
         request_id: str | None = None,
     ) -> list[ProviderOption]:
+        send_location_name = (
+            location_name
+            if (filter_by_location_name or latitude is None or longitude is None)
+            else None
+        )
         payload: dict[str, Any] = {
             "service_code": service_code,
-            "location_name": location_name if (latitude is None or longitude is None) else None,
+            "location_name": send_location_name,
             "latitude": latitude,
             "longitude": longitude,
             "date": date,
@@ -50,8 +56,13 @@ class SearchCoordinator:
         raw = await self.backend_client.search_services(payload, request_id=request_id)
         items = [ProviderOption(**item) for item in raw.get("providers", [])]
 
-        # If coordinate search returned results far away when user named a specific city,
-        # keep providers within reasonable proximity if available, else return ranked matches.
+        # Graceful fallback: if strict city filter returned 0 matches when user GPS is available,
+        # retry coordinate-only search so nearest available providers are still shown.
+        if not items and send_location_name and latitude is not None and longitude is not None:
+            fallback_payload = {k: v for k, v in payload.items() if k != "location_name"}
+            raw = await self.backend_client.search_services(fallback_payload, request_id=request_id)
+            items = [ProviderOption(**item) for item in raw.get("providers", [])]
+
         ranked = self.ranking_engine.rank(
             items,
             sort_by=sort_by,

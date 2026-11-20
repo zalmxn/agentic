@@ -47,6 +47,7 @@ async def post_assistant_message(
             conversation_id=payload.conversation_id,
             latitude=payload.latitude,
             longitude=payload.longitude,
+            location_label=payload.location_label,
             request_id=request_id,
         )
     except BackendClientError as exc:

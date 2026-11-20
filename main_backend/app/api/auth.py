@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import User
-from app.schemas import AuthTokenResponse, LoginRequest, RegisterRequest, UserResponse
+from app.schemas import AuthTokenResponse, LoginRequest, RegisterRequest, UpdateLocationRequest, UserResponse
 from app.security import create_access_token, get_current_user, hash_password, verify_password
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Authentication"])
@@ -14,6 +14,9 @@ def _to_user_response(user: User) -> UserResponse:
         id=user.id,
         email=user.email,
         full_name=user.full_name,
+        current_location_name=user.current_location_name,
+        current_latitude=user.current_latitude,
+        current_longitude=user.current_longitude,
         is_active=user.is_active,
         created_at=user.created_at,
     )
@@ -62,4 +65,25 @@ def login_user(payload: LoginRequest, db: Session = Depends(get_db)) -> AuthToke
 
 @router.get("/me", response_model=UserResponse)
 def get_me(current_user: User = Depends(get_current_user)) -> UserResponse:
+    return _to_user_response(current_user)
+
+
+@router.put("/location", response_model=UserResponse)
+def update_my_location(
+    payload: UpdateLocationRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> UserResponse:
+    if payload.latitude is None or payload.longitude is None:
+        current_user.current_location_name = None
+        current_user.current_latitude = None
+        current_user.current_longitude = None
+    else:
+        current_user.current_location_name = (payload.location_name or "").strip() or "Current Location"
+        current_user.current_latitude = payload.latitude
+        current_user.current_longitude = payload.longitude
+
+    db.add(current_user)
+    db.commit()
+    db.refresh(current_user)
     return _to_user_response(current_user)

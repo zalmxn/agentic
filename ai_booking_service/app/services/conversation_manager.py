@@ -188,6 +188,7 @@ class ConversationManager:
         conversation_id: str | None = None,
         latitude: float | None = None,
         longitude: float | None = None,
+        location_label: str | None = None,
         request_id: str | None = None,
         reference_now: datetime | None = None,
     ) -> AssistantResponse:
@@ -235,12 +236,22 @@ class ConversationManager:
         self._append_history(context, "customer", message)
         context["extracted_intent"] = parsed.type.value
 
-        # Inject client GPS coordinates if provided
+        # Inject client GPS coordinates (user's real current location) if provided
         if latitude is not None and longitude is not None:
-            context["latitude"] = latitude
-            context["longitude"] = longitude
-            if parsed.entities.near_me and not context.get("location"):
-                context["location"] = "Current Location"
+            context["user_latitude"] = latitude
+            context["user_longitude"] = longitude
+            resolved_label = (location_label or "").strip() or "Current Location"
+            context["user_location_label"] = resolved_label
+            if not context.get("target_location"):
+                context["latitude"] = latitude
+                context["longitude"] = longitude
+            if parsed.entities.near_me:
+                context.pop("target_location", None)
+                context["location"] = resolved_label
+                context["latitude"] = latitude
+                context["longitude"] = longitude
+            elif not context.get("location"):
+                context["location"] = resolved_label
 
         # 3. Handle ambiguities & invalid dates explicitly (never fabricate values)
         if parsed.entities.invalid_date_reason:
@@ -436,6 +447,7 @@ class ConversationManager:
             updated_fields.append(f"time to {_format_time_display(parsed.entities.time)}")
         if parsed.entities.location:
             context["location"] = parsed.entities.location
+            context["target_location"] = parsed.entities.location
             context["latitude"] = parsed.entities.latitude
             context["longitude"] = parsed.entities.longitude
             updated_fields.append(f"location to {parsed.entities.location}")
@@ -511,6 +523,7 @@ class ConversationManager:
             context.pop("date", None)
             context.pop("time", None)
             context.pop("location", None)
+            context.pop("target_location", None)
             context.pop("latitude", None)
             context.pop("longitude", None)
 
@@ -540,9 +553,15 @@ class ConversationManager:
             context["service_category"] = parsed.entities.service_category
         if parsed.entities.location:
             context["location"] = parsed.entities.location
+            context["target_location"] = parsed.entities.location
             context["latitude"] = parsed.entities.latitude
             context["longitude"] = parsed.entities.longitude
             context["unresolved_location"] = parsed.entities.unresolved_location
+        elif parsed.entities.near_me and context.get("user_latitude") is not None and context.get("user_longitude") is not None:
+            context.pop("target_location", None)
+            context["location"] = context.get("user_location_label") or "Current Location"
+            context["latitude"] = context["user_latitude"]
+            context["longitude"] = context["user_longitude"]
         if parsed.entities.date:
             context["date"] = parsed.entities.date
         if parsed.entities.time:
@@ -683,16 +702,22 @@ class ConversationManager:
         self._transition(record, ConversationState.SEARCHING)
 
         sort_by = context.get("sort_by") or parsed.sort_by or "best"
+        has_user_gps = context.get("user_latitude") is not None and context.get("user_longitude") is not None
+        search_lat = context["user_latitude"] if has_user_gps else context.get("latitude")
+        search_lon = context["user_longitude"] if has_user_gps else context.get("longitude")
+        target_loc = context.get("target_location")
+        search_loc_name = target_loc if has_user_gps else context.get("location")
         providers = await self.search_coordinator.search_and_rank(
             service_code=context.get("service"),
-            location_name=context.get("location"),
-            latitude=context.get("latitude"),
-            longitude=context.get("longitude"),
+            location_name=search_loc_name,
+            latitude=search_lat,
+            longitude=search_lon,
             date=context.get("date"),
             start_time=context.get("time"),
             sort_by=sort_by,
             max_price=context.get("max_price"),
             max_distance_km=context.get("max_distance_km"),
+            filter_by_location_name=bool(has_user_gps and target_loc),
             request_id=request_id,
         )
 
@@ -733,22 +758,40 @@ class ConversationManager:
         price_txt = _format_price(top.price, top.currency)
         time_txt = _format_time_display(top.start_time or context.get("time"))
 
+        dist_from_user = (
+            f" ({top.distance_km:.2f} km from {context.get('user_location_label', 'your location')})"
+            if (has_user_gps and top.distance_km is not None)
+            else ""
+        )
+
         if sort_by == "price":
-            lead = f"The cheapest option is {top.provider_name} for {price_txt}"
+            lead = f"The cheapest option is {top.provider_name}{dist_from_user} for {price_txt}"
         elif sort_by == "distance":
-            dist_txt = f" ({top.distance_km:.2f} km away)" if top.distance_km is not None else ""
+            dist_txt = (
+                f" ({top.distance_km:.2f} km from {context.get('user_location_label', 'your location')})"
+                if (has_user_gps and top.distance_km is not None)
+                else (f" ({top.distance_km:.2f} km away)" if top.distance_km is not None else "")
+            )
             lead = f"The nearest option is {top.provider_name}{dist_txt} for {price_txt}"
         elif sort_by == "rating":
             rating_txt = f" (rated {top.rating:.1f}/5)" if top.rating is not None else ""
-            lead = f"The highest-rated option is {top.provider_name}{rating_txt} for {price_txt}"
+            lead = f"The highest-rated option is {top.provider_name}{rating_txt}{dist_from_user} for {price_txt}"
         else:
-            lead = f"The top match is {top.provider_name} for {price_txt}"
+            lead = f"The top match is {top.provider_name}{dist_from_user} for {price_txt}"
 
         reply = (
             f"{prefix_note}I found {count} available provider{'s' if count != 1 else ''} "
             f"for {context.get('date')} at {time_txt}. {lead}. "
             "Say 'Book that one' or pick a provider (e.g., 'Book the second provider') to proceed."
         )
+
+        response_data: dict[str, Any] = {"providers": serialized, "sort_by": sort_by}
+        if has_user_gps:
+            response_data["user_location"] = {
+                "label": context.get("user_location_label") or "Current Location",
+                "latitude": context["user_latitude"],
+                "longitude": context["user_longitude"],
+            }
 
         self._append_history(context, "assistant", reply)
         await self.repository.save(record, authorization=authorization, request_id=request_id)
@@ -758,7 +801,7 @@ class ConversationManager:
             status=record.state.value,
             message=reply,
             intent=self._build_intent_summary(parsed, context),
-            data={"providers": serialized, "sort_by": sort_by},
+            data=response_data,
             requires_confirmation=False,
             missing_fields=[],
         )

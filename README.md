@@ -118,6 +118,9 @@ erDiagram
         string email UK "Unique, Indexed"
         string full_name "VARCHAR(150)"
         string password_hash "pbkdf2_sha256$200000$salt$dk"
+        string current_location_name "Nullable saved user area/label"
+        float current_latitude "Nullable saved user GPS latitude"
+        float current_longitude "Nullable saved user GPS longitude"
         boolean is_active "Default true"
         datetime created_at "UTC"
     }
@@ -590,7 +593,7 @@ agentic/
 │   │   ├── services/
 │   │   │   └── booking_service.py      # Haversine search, availability check, atomic create & cancel
 │   │   └── static/
-│   │       └── index.html              # Interactive Web Chat UI + live FSM & Intent Inspector
+│   │       └── index.html              # Interactive Web Chat UI, User GPS/Area Location Panel, Route/Directions & FSM Inspector
 │   ├── tests/
 │   │   ├── conftest.py
 │   │   └── test_booking_concurrency.py # Multi-threaded SQLite race, rollback, idempotency, ownership & auth
@@ -735,7 +738,8 @@ cd ai_booking_service
 | `GET` | `/health` · `/ready` | Public | Liveness probe & SQLite `SELECT 1` readiness check |
 | `POST` | `/api/v1/auth/register` | Public | Register account (returns HS256 JWT + user) |
 | `POST` | `/api/v1/auth/login` | Public | Authenticate email/password (returns HS256 JWT) |
-| `GET` | `/api/v1/auth/me` | Bearer JWT | Return authenticated customer profile |
+| `GET` | `/api/v1/auth/me` | Bearer JWT | Return authenticated customer profile (including saved current location) |
+| `PUT` | `/api/v1/auth/location` | Bearer JWT | Save or clear the customer's current GPS coordinates & area label |
 | `GET` | `/api/v1/services` | Public | List service catalog |
 | `GET` | `/api/v1/providers` | Public | List active providers |
 | `GET` | `/api/v1/bookings` | Bearer JWT | List current customer's bookings |
@@ -771,10 +775,13 @@ cd ai_booking_service
 
 ### Example Request & Response (`POST /v1/assistant/message`)
 
-**Request**
+**Request** (optionally includes the user's live GPS/area coordinates to measure distance to every provider)
 ```json
 {
-  "message": "Find the cheapest car wash near Aluva tomorrow at 2 PM"
+  "message": "Find the cheapest car wash near Aluva tomorrow at 2 PM",
+  "latitude": 10.0553,
+  "longitude": 76.3219,
+  "location_label": "Kalamassery"
 }
 ```
 
@@ -784,7 +791,7 @@ cd ai_booking_service
   "success": true,
   "conversation_id": "a6f7f8c0-...",
   "status": "OPTIONS_FOUND",
-  "message": "I found 9 available providers for 2026-11-20 at 2:00 PM. The cheapest option is Amazing Carwash for ₹300. Say 'Book that one' or pick a provider (e.g., 'Book the second provider') to proceed.",
+  "message": "I found 3 available providers for 2026-11-20 at 2:00 PM. The cheapest option is Topnotch Car Wash and Detailing (4.32 km from Kalamassery) for ₹300. Say 'Book that one' or pick a provider (e.g., 'Book the second provider') to proceed.",
   "intent": {
     "type": "FIND_CHEAPEST",
     "confidence": 0.93,
@@ -798,17 +805,24 @@ cd ai_booking_service
     "ambiguities": []
   },
   "data": {
+    "user_location": {
+      "label": "Kalamassery",
+      "latitude": 10.0553,
+      "longitude": 76.3219
+    },
     "providers": [
       {
         "provider_id": "...",
-        "listing_id": "ERK-001",
-        "provider_name": "Amazing Carwash",
+        "listing_id": "ERK-002",
+        "provider_name": "Topnotch Car Wash and Detailing",
         "location_name": "Aluva",
-        "address": "Near Power House, near Amazing Hypermarket L, Aluva, Kerala 683101",
-        "phone_public": null,
-        "distance_km": 0.0,
-        "rating": 4.0,
-        "review_count": 289,
+        "address": "Metro Pillar 100, NH47, Companypady, Choornikkara, Aluva, Kerala 683106",
+        "phone_public": "+91 97479 99804",
+        "latitude": 10.0882,
+        "longitude": 76.3428,
+        "distance_km": 4.32,
+        "rating": 4.9,
+        "review_count": 18,
         "verification_status": "public_listing_found_verify_before_onboarding",
         "source_name": "Google business listing",
         "provider_service_id": "...",
@@ -852,13 +866,13 @@ cd ai_booking_service
 
 ### Pytest Suites
 ```powershell
-# 1. AI Microservice unit & integration tests (41 tests)
-#    Covers: 13 intents, entity extraction, typos, date ambiguities, ranking, 12-state FSM, end-to-end booking flows
+# 1. AI Microservice unit & integration tests (42 tests)
+#    Covers: 13 intents, entity extraction, typos, date ambiguities, ranking, 12-state FSM, user GPS location, end-to-end booking flows
 .\.venv\Scripts\python.exe -m pytest ai_booking_service\tests -v
 
-# 2. Main Backend concurrency, security & persistence tests (5 tests)
+# 2. Main Backend concurrency, security & persistence tests (6 tests)
 #    Covers: multi-threaded SQLite BEGIN IMMEDIATE race conditions, idempotency replay/conflict,
-#            price change rollback, cancellation slot release, JWT & X-Internal-Token enforcement
+#            price change rollback, cancellation slot release, user current location persistence & distance search, JWT & X-Internal-Token enforcement
 .\.venv\Scripts\python.exe -m pytest main_backend\tests -v
 ```
 
