@@ -12,16 +12,14 @@ A production-oriented, **100% deterministic, rule-based conversational service b
 1. [System Architecture & Component Topology](#1-system-architecture--component-topology)
 2. [Database Schema (ER Diagram)](#2-database-schema-er-diagram)
 3. [Deterministic NLU & Intent Classification Pipeline](#3-deterministic-nlu--intent-classification-pipeline)
-4. [12-State Conversational Workflow FSM](#4-12-state-conversational-workflow-fsm)
-5. [End-to-End Multi-Turn Booking Sequence](#5-end-to-end-multi-turn-booking-sequence)
-6. [Concurrency-Safe Atomic Booking & Cancellation](#6-concurrency-safe-atomic-booking--cancellation)
-7. [Deterministic Multi-Factor Ranking Engine](#7-deterministic-multi-factor-ranking-engine)
-8. [Security, Rate Limiting & Error Propagation](#8-security-rate-limiting--error-propagation)
-9. [Folder Structure](#9-folder-structure)
-10. [Installation, Configuration & Running Locally](#10-installation-configuration--running-locally)
-11. [Complete API Reference & Payloads](#11-complete-api-reference--payloads)
-12. [Automated Tests & Locust Load Testing](#12-automated-tests--locust-load-testing)
-13. [Production Security & Scaling Guide](#13-production-security--scaling-guide)
+4. [Concurrency-Safe Atomic Booking & Cancellation](#4-concurrency-safe-atomic-booking--cancellation)
+5. [Deterministic Multi-Factor Ranking Engine](#5-deterministic-multi-factor-ranking-engine)
+6. [Security, Rate Limiting & Error Propagation](#6-security-rate-limiting--error-propagation)
+7. [Folder Structure](#7-folder-structure)
+8. [Installation, Configuration & Running Locally](#8-installation-configuration--running-locally)
+9. [Complete API Reference & Payloads](#9-complete-api-reference--payloads)
+10. [Automated Tests & Locust Load Testing](#10-automated-tests--locust-load-testing)
+11. [Production Security & Scaling Guide](#11-production-security--scaling-guide)
 
 ---
 
@@ -289,175 +287,7 @@ flowchart TD
 
 ---
 
-## 4. 12-State Conversational Workflow FSM
-
-`ConversationManager` enforces strict transitions via `ALLOWED_TRANSITIONS` in [`ai_booking_service/app/services/conversation_manager.py`](ai_booking_service/app/services/conversation_manager.py). Invalid transitions raise `InvalidStateTransitionError`, and every conversation is persisted in SQLite with a sliding TTL (`CONVERSATION_TTL_MINUTES = 30`).
-
-```mermaid
-stateDiagram-v2
-    [*] --> INITIAL : New Conversation Created
-
-    INITIAL --> COLLECTING_INFORMATION : Missing service / date / time or Ambiguity
-    INITIAL --> READY_TO_SEARCH : All required fields present or list-all browse query
-    INITIAL --> CANCELLED : Cancel request
-    INITIAL --> EXPIRED : TTL exceeded
-
-    COLLECTING_INFORMATION --> COLLECTING_INFORMATION : Partial slot fill / Ambiguity
-    COLLECTING_INFORMATION --> READY_TO_SEARCH : All fields collected (service + date + time)
-    COLLECTING_INFORMATION --> CANCELLED : Cancel request
-    COLLECTING_INFORMATION --> EXPIRED : TTL exceeded
-
-    READY_TO_SEARCH --> SEARCHING : Invoke SearchCoordinator
-    READY_TO_SEARCH --> COLLECTING_INFORMATION : Missing fields
-    READY_TO_SEARCH --> CANCELLED : Cancel
-    READY_TO_SEARCH --> EXPIRED : TTL exceeded
-
-    SEARCHING --> OPTIONS_FOUND : Providers available & ranked
-    SEARCHING --> COLLECTING_INFORMATION : NO_PROVIDERS_FOUND (prompt alternate time/area)
-    SEARCHING --> CANCELLED : Cancel
-    SEARCHING --> EXPIRED : TTL exceeded
-
-    OPTIONS_FOUND --> PROVIDER_SELECTED : User selects option & slot verified available
-    OPTIONS_FOUND --> READY_TO_SEARCH : Modify date/time/location & re-search
-    OPTIONS_FOUND --> COLLECTING_INFORMATION : Modify requires missing field
-    OPTIONS_FOUND --> CANCELLED : Cancel
-    OPTIONS_FOUND --> EXPIRED : TTL exceeded
-
-    PROVIDER_SELECTED --> AWAITING_CONFIRMATION : Prompt customer for explicit confirmation
-    PROVIDER_SELECTED --> OPTIONS_FOUND : Change selection
-    PROVIDER_SELECTED --> CANCELLED : Cancel
-    PROVIDER_SELECTED --> EXPIRED : TTL exceeded
-
-    AWAITING_CONFIRMATION --> BOOKING_IN_PROGRESS : Customer confirms (Yes / /confirm)
-    AWAITING_CONFIRMATION --> AWAITING_CONFIRMATION : Switch provider selection
-    AWAITING_CONFIRMATION --> READY_TO_SEARCH : Modify date/time/location & re-search
-    AWAITING_CONFIRMATION --> CANCELLED : Customer declines or cancels
-    AWAITING_CONFIRMATION --> EXPIRED : TTL exceeded
-
-    BOOKING_IN_PROGRESS --> BOOKING_CONFIRMED : Atomic booking committed (201)
-    BOOKING_IN_PROGRESS --> AWAITING_CONFIRMATION : PRICE_CHANGED (409) -> re-confirm updated price
-    BOOKING_IN_PROGRESS --> BOOKING_FAILED : SLOT_UNAVAILABLE / Conflict / Backend error
-
-    BOOKING_CONFIRMED --> CANCELLED : Cancel confirmed booking (releases slot)
-    BOOKING_CONFIRMED --> READY_TO_SEARCH : Start new booking (all fields)
-    BOOKING_CONFIRMED --> COLLECTING_INFORMATION : Start new booking (partial fields)
-
-    BOOKING_FAILED --> READY_TO_SEARCH : Retry search with new time/provider
-    BOOKING_FAILED --> COLLECTING_INFORMATION : Provide alternate criteria
-    BOOKING_FAILED --> CANCELLED : Cancel
-
-    CANCELLED --> READY_TO_SEARCH : Start fresh search (all fields)
-    CANCELLED --> COLLECTING_INFORMATION : Start fresh search (partial fields)
-
-    EXPIRED --> [*] : Terminal (start new conversation)
-```
-
-### Persistent `context_json` Structure
-
-Stored inside `conversations.context_json` in `main_backend`:
-- **Slots & Filters**: `service`, `service_display`, `service_category`, `location`, `latitude`, `longitude`, `date`, `time`, `sort_by`, `max_price`, `max_distance_km`
-- **Search & Selection**: `search_results` (ranked provider snapshots), `selected_provider` (verified `provider_service_id`, `slot_id`, `expected_price`, `currency`)
-- **Booking Snapshot**: `confirmed_booking_id`, `confirmed_booking_code`, `confirmed_booking`
-- **Audit Window**: `extracted_intent`, `history` (last 20 customer/assistant turns)
-
----
-
-## 5. End-to-End Multi-Turn Booking Sequence
-
-The following sequence diagram traces a full authenticated booking session—including live availability checks, deterministic idempotency, atomic slot reservation, and conflict handling (`PRICE_CHANGED`, `SLOT_UNAVAILABLE`, and idempotent replay).
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor User as Customer / Web Chat UI
-    participant Proxy as Main Backend (:8000)<br/>Auth & /api/v1/chat/*
-    participant AI as AI Microservice (:8001)<br/>NLU · Ranking · FSM
-    participant Internal as Main Backend (:8000)<br/>/internal/* + BookingService
-    participant DB as SQLite (WAL)<br/>booking_platform.db
-
-    rect rgb(235, 245, 255)
-        Note over User,DB: Phase 1 — Authentication
-        User->>Proxy: POST /api/v1/auth/login (email, password)
-        Proxy->>DB: Verify PBKDF2-SHA256 hash
-        DB-->>Proxy: Active User record
-        Proxy-->>User: 200 OK { access_token (HS256 JWT), user }
-    end
-
-    rect rgb(240, 252, 244)
-        Note over User,DB: Phase 2 — Search & Deterministic Ranking
-        User->>Proxy: POST /api/v1/chat/message<br/>"Find the cheapest car wash near Aluva tomorrow at 2 PM"
-        Proxy->>Proxy: Validate JWT & close DB session
-        Proxy->>AI: POST /v1/assistant/message (Bearer JWT + X-Request-ID)
-        AI->>AI: Rate Limit Check (60 req/60s)
-        AI->>Internal: POST /internal/conversations (X-Internal-Token + JWT)
-        Internal->>DB: INSERT conversations (state=INITIAL, TTL=+30m)
-        DB-->>Internal: conversation_id
-        Internal-->>AI: ConversationRecord
-        AI->>AI: NLU Parse -> FIND_CHEAPEST<br/>service=car_wash, loc=Aluva (10.1076,76.3516), date, time=14:00
-        AI->>Internal: POST /internal/services/search
-        Internal->>DB: Query ProviderService + Haversine + AvailabilitySlot
-        DB-->>Internal: Available providers
-        Internal-->>AI: InternalSearchResponse
-        AI->>AI: RankingEngine.rank(sort_by="price")<br/>FSM: INITIAL -> READY_TO_SEARCH -> SEARCHING -> OPTIONS_FOUND
-        AI->>Internal: PUT /internal/conversations/{id} (state=OPTIONS_FOUND, search_results)
-        Internal->>DB: UPDATE conversations
-        AI-->>Proxy: 200 OK { status: OPTIONS_FOUND, providers: [...] }
-        Proxy-->>User: Ranked providers + explanations
-    end
-
-    rect rgb(255, 248, 235)
-        Note over User,DB: Phase 3 — Reference Resolution & Live Slot Verification
-        User->>Proxy: POST /api/v1/chat/message<br/>{ conversation_id, message: "Book that one" }
-        Proxy->>AI: Forward POST /v1/assistant/message
-        AI->>Internal: GET /internal/conversations/{id} (ownership verified)
-        Internal-->>AI: ConversationRecord (OPTIONS_FOUND)
-        AI->>AI: NLU -> SELECT_PROVIDER (anaphoric -> results[0])
-        AI->>Internal: POST /internal/availability/check (provider_service_id, slot_id)
-        Internal->>DB: Verify active provider, working hours, capacity > booked_count
-        DB-->>Internal: available=true, current_price=300.0
-        Internal-->>AI: AvailabilityCheckResponse
-        AI->>AI: FSM: OPTIONS_FOUND -> PROVIDER_SELECTED -> AWAITING_CONFIRMATION
-        AI->>Internal: PUT /internal/conversations/{id} (selected_provider, expected_price=300)
-        AI-->>Proxy: 200 OK { status: AWAITING_CONFIRMATION, requires_confirmation: true }
-        Proxy-->>User: "Do you want to confirm Amazing Carwash ... for ₹300?"
-    end
-
-    rect rgb(245, 240, 255)
-        Note over User,DB: Phase 4 — Atomic Confirmation & Concurrency Safety
-        User->>Proxy: POST /api/v1/chat/confirm { conversation_id, confirm: true }
-        Proxy->>AI: Forward POST /v1/assistant/confirm
-        AI->>Internal: PUT /internal/conversations/{id} (state=BOOKING_IN_PROGRESS)
-        AI->>AI: Compute deterministic idempotency_key<br/>idem-SHA256(user:conv:ps:slot:price)[:32]
-        AI->>Internal: POST /internal/bookings/create<br/>{ provider_service_id, slot_id, expected_price, idempotency_key }
-        Internal->>DB: BEGIN IMMEDIATE (acquire RESERVED write lock)
-        alt Happy Path — Price Matches & Slot Available
-            Internal->>DB: Check idempotency_key, price, hours, capacity, duplicates
-            Internal->>DB: UPDATE availability_slots SET booked_count = booked_count + 1
-            Internal->>DB: INSERT bookings (BK-YYYYMMDD-XXXX, status=CONFIRMED)
-            Internal->>DB: COMMIT
-            Internal-->>AI: 201 Created { BookingResponse }
-            AI->>Internal: PUT /internal/conversations/{id} (state=BOOKING_CONFIRMED)
-            AI-->>Proxy: 200 OK { status: BOOKING_CONFIRMED, booking: {...} }
-            Proxy-->>User: Booking confirmed with code BK-YYYYMMDD-XXXX
-        else Price Changed Before Confirmation (409 PRICE_CHANGED)
-            Internal->>DB: ROLLBACK
-            Internal-->>AI: 409 { error_code: PRICE_CHANGED, current_price }
-            AI->>Internal: PUT /internal/conversations/{id}<br/>(state=AWAITING_CONFIRMATION, updated expected_price)
-            AI-->>Proxy: 200 OK { requires_confirmation: true, error_code: PRICE_CHANGED }
-            Proxy-->>User: Ask explicit re-confirmation at new price
-        else Slot Sold Out Under Race Condition (409 SLOT_UNAVAILABLE)
-            Internal->>DB: ROLLBACK
-            Internal-->>AI: 409 { error_code: SLOT_UNAVAILABLE }
-            AI->>Internal: PUT /internal/conversations/{id} (state=BOOKING_FAILED)
-            AI-->>Proxy: 200 OK { status: BOOKING_FAILED, error_code: SLOT_UNAVAILABLE }
-            Proxy-->>User: Prompt user to pick another slot or provider
-        end
-    end
-```
-
----
-
-## 6. Concurrency-Safe Atomic Booking & Cancellation
+## 4. Concurrency-Safe Atomic Booking & Cancellation
 
 SQLite defaults to deferred read transactions that can cause write deadlocks or double-booking races under concurrent requests. [`main_backend/app/database.py`](main_backend/app/database.py) solves this with `isolation_level=None` and `immediate_transaction()`, which executes **`BEGIN IMMEDIATE`** to acquire SQLite's `RESERVED` write lock at the very start of the transaction (SQLite's equivalent of PostgreSQL's `SELECT ... FOR UPDATE`).
 
@@ -511,7 +341,7 @@ flowchart LR
 
 ---
 
-## 7. Deterministic Multi-Factor Ranking Engine
+## 5. Deterministic Multi-Factor Ranking Engine
 
 [`ai_booking_service/app/core/ranking_engine.py`](ai_booking_service/app/core/ranking_engine.py) filters out unavailable providers, optionally applies `max_distance_km`, and produces deterministic scores plus human-readable `ranking_explanation` strings. **Missing ratings or distances are never fabricated.**
 
@@ -545,7 +375,7 @@ flowchart TD
 
 ---
 
-## 8. Security, Rate Limiting & Error Propagation
+## 6. Security, Rate Limiting & Error Propagation
 
 ```mermaid
 flowchart LR
@@ -573,7 +403,7 @@ flowchart LR
 
 ---
 
-## 9. Folder Structure
+## 7. Folder Structure
 
 ```text
 agentic/
@@ -647,7 +477,7 @@ agentic/
 
 ---
 
-## 10. Installation, Configuration & Running Locally
+## 8. Installation, Configuration & Running Locally
 
 ### 1. Create Virtual Environment & Install Dependencies
 ```powershell
@@ -728,7 +558,7 @@ cd ai_booking_service
 
 ---
 
-## 11. Complete API Reference & Payloads
+## 9. Complete API Reference & Payloads
 
 ### Main Backend Public APIs (`:8000`)
 
@@ -862,7 +692,7 @@ cd ai_booking_service
 
 ---
 
-## 12. Automated Tests & Locust Load Testing
+## 10. Automated Tests & Locust Load Testing
 
 ### Pytest Suites
 ```powershell
@@ -892,7 +722,7 @@ cd ai_booking_service
 
 ---
 
-## 13. Production Security & Scaling Guide
+## 11. Production Security & Scaling Guide
 
 1. **Strong Secrets Management**: Replace default `JWT_SECRET_KEY` and `INTERNAL_API_TOKEN` with cryptographically random secrets injected from a secret manager or environment variables.
 2. **Private Network Isolation**: Never expose `/internal/*` on public ingress/reverse proxies; restrict access to private mesh/VPC traffic alongside `X-Internal-Token`.
