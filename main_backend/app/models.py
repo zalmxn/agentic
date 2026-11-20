@@ -59,15 +59,19 @@ class Provider(Base):
     __tablename__ = "providers"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    listing_id: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
     name: Mapped[str] = mapped_column(String(150), nullable=False, index=True)
     location_name: Mapped[str] = mapped_column(String(120), nullable=False, index=True)
     address: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+    phone_public: Mapped[str | None] = mapped_column(String(64), nullable=True)
     latitude: Mapped[float] = mapped_column(Float, nullable=False)
     longitude: Mapped[float] = mapped_column(Float, nullable=False)
     rating: Mapped[float | None] = mapped_column(Float, nullable=True)
     review_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     work_start_time: Mapped[str] = mapped_column(String(5), default="09:00", nullable=False)
     work_end_time: Mapped[str] = mapped_column(String(5), default="19:00", nullable=False)
+    verification_status: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    source_name: Mapped[str | None] = mapped_column(String(150), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
 
     provider_services: Mapped[list["ProviderService"]] = relationship(

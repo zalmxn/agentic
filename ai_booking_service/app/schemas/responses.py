@@ -21,12 +21,16 @@ class IntentSummary(BaseModel):
 
 class ProviderOption(BaseModel):
     provider_id: str
+    listing_id: str | None = None
     provider_name: str
     location_name: str = ""
     address: str = ""
+    phone_public: str | None = None
     distance_km: float | None = None
     rating: float | None = None
     review_count: int = 0
+    verification_status: str | None = None
+    source_name: str | None = None
     service_id: str = ""
     service_code: str = ""
     service_name: str = ""

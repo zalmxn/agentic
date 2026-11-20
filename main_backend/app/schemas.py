@@ -48,15 +48,19 @@ class ServiceResponse(BaseModel):
 
 class ProviderSummary(BaseModel):
     provider_id: str
+    listing_id: str | None = None
     provider_name: str
     location_name: str
     address: str
+    phone_public: str | None = None
     latitude: float
     longitude: float
     rating: float | None = None
     review_count: int = 0
     work_start_time: str
     work_end_time: str
+    verification_status: str | None = None
+    source_name: str | None = None
 
 
 # ---------- Internal Search & Availability ----------
@@ -77,14 +81,18 @@ class InternalSearchRequest(BaseModel):
 
 class ProviderSearchResultItem(BaseModel):
     provider_id: str
+    listing_id: str | None = None
     provider_name: str
     location_name: str
     address: str
+    phone_public: str | None = None
     latitude: float
     longitude: float
     distance_km: float | None = None
     rating: float | None = None
     review_count: int = 0
+    verification_status: str | None = None
+    source_name: str | None = None
     service_id: str
     service_code: str
     service_name: str

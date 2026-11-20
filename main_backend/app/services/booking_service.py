@@ -161,14 +161,18 @@ def search_providers(db: Session, req: InternalSearchRequest) -> InternalSearchR
         results.append(
             ProviderSearchResultItem(
                 provider_id=provider.id,
+                listing_id=provider.listing_id,
                 provider_name=provider.name,
                 location_name=provider.location_name,
                 address=provider.address,
+                phone_public=provider.phone_public,
                 latitude=provider.latitude,
                 longitude=provider.longitude,
                 distance_km=distance_km,
                 rating=provider.rating,
                 review_count=provider.review_count,
+                verification_status=provider.verification_status,
+                source_name=provider.source_name,
                 service_id=svc.id,
                 service_code=svc.code,
                 service_name=svc.name,

@@ -42,15 +42,19 @@ def list_providers(db: Session = Depends(get_db)) -> list[ProviderSummary]:
     return [
         ProviderSummary(
             provider_id=p.id,
+            listing_id=p.listing_id,
             provider_name=p.name,
             location_name=p.location_name,
             address=p.address,
+            phone_public=p.phone_public,
             latitude=p.latitude,
             longitude=p.longitude,
             rating=p.rating,
             review_count=p.review_count,
             work_start_time=p.work_start_time,
             work_end_time=p.work_end_time,
+            verification_status=p.verification_status,
+            source_name=p.source_name,
         )
         for p in providers
     ]
