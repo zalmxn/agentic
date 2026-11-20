@@ -1970,46 +1970,7 @@
         </div>
       </div>
 
-      <!-- Card 1: Conversation State -->
-      <div class="dash-card">
-        <div class="dash-card-header">
-          <div class="dash-card-title">
-            <span class="dash-card-icon" aria-hidden="true">
-              <i data-lucide="git-branch"></i>
-            </span>
-            <h3>Conversation State</h3>
-          </div>
-          <span class="card-sub-tag">FSM</span>
-        </div>
-
-        <div class="state-row">
-          <div id="stateBadge" class="state-badge state-initial">INITIAL</div>
-        </div>
-
-        <div class="conv-id-box">
-          <i data-lucide="hash" aria-hidden="true"></i>
-          <span id="convIdLabel">No active conversation</span>
-        </div>
-      </div>
-
-      <!-- Card 2: Extracted Intent & Entities -->
-      <div class="dash-card">
-        <div class="dash-card-header">
-          <div class="dash-card-title">
-            <span class="dash-card-icon" aria-hidden="true">
-              <i data-lucide="braces"></i>
-            </span>
-            <h3>Extracted Intent &amp; Entities</h3>
-          </div>
-          <span class="card-sub-tag">JSON</span>
-        </div>
-
-        <div class="json-panel">
-          <pre id="intentJson">{}</pre>
-        </div>
-      </div>
-
-      <!-- Card 3: My Bookings -->
+      <!-- Card: My Bookings -->
       <div class="dash-card bookings-card">
         <div class="dash-card-header">
           <div class="dash-card-title">
@@ -2582,9 +2543,6 @@
         updateAuthButtonStates(currentUser.email);
 
         document.getElementById("messages").innerHTML = "";
-        updateStateBadgeAppearance("INITIAL");
-        document.getElementById("convIdLabel").textContent = "Ready for a new conversation";
-        document.getElementById("intentJson").textContent = "{}";
 
         addMessage("bot", `Signed in as ${currentUser.full_name}. Ask me to find or book a service!`);
         showToast("success", "Signed In", `Welcome, ${currentUser.full_name}.`);
@@ -2597,11 +2555,8 @@
 
     function resetConversation() {
       conversationId = null;
-      updateStateBadgeAppearance("INITIAL");
-      document.getElementById("convIdLabel").textContent = "New conversation";
-      document.getElementById("intentJson").textContent = "{}";
       addMessage("bot", "Started a fresh conversation. What service can I help you book?");
-      showToast("info", "New Conversation", "Conversation state has been reset to INITIAL.");
+      showToast("info", "New Conversation", "Started a fresh conversation.");
     }
 
     async function sendPreset(text) {
@@ -2723,13 +2678,6 @@
     function updateInspector(data) {
       if (data.conversation_id) {
         conversationId = data.conversation_id;
-        document.getElementById("convIdLabel").textContent = "ID: " + conversationId;
-      }
-      if (data.status) {
-        updateStateBadgeAppearance(data.status);
-      }
-      if (data.intent) {
-        document.getElementById("intentJson").textContent = JSON.stringify(data.intent, null, 2);
       }
     }
 

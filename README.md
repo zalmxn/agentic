@@ -32,7 +32,7 @@ The platform enforces **strict service boundary separation**: `ai_booking_servic
 ```mermaid
 flowchart TB
     subgraph Clients["Client Layer"]
-        WebUI["Web Chat UI + FSM Inspector<br/>(main_backend/app/static/index.html)"]
+        WebUI["Web Chat UI<br/>(main_backend/app/static/index.html)"]
         APIClient["External API Client / Mobile App"]
         Locust["Locust Load Test<br/>(load_tests/locustfile.py)"]
     end
@@ -593,7 +593,7 @@ agentic/
 │   │   ├── services/
 │   │   │   └── booking_service.py      # Haversine search, availability check, atomic create & cancel
 │   │   └── static/
-│   │       └── index.html              # Interactive Web Chat UI, User GPS/Area Location Panel, Route/Directions & FSM Inspector
+│   │       └── index.html              # Interactive Web Chat UI with User GPS/Area Location Panel, Route/Directions & My Bookings
 │   ├── tests/
 │   │   ├── conftest.py
 │   │   └── test_booking_concurrency.py # Multi-threaded SQLite race, rollback, idempotency, ownership & auth
@@ -717,7 +717,7 @@ cd ai_booking_service
 ```
 
 ### Interactive Endpoints & Seeded Demo Data
-- **Web Chat UI & FSM Inspector**: `http://127.0.0.1:8000/`
+- **Web Chat UI**: `http://127.0.0.1:8000/`
 - **Main Backend Swagger UI**: `http://127.0.0.1:8000/docs`
 - **AI Microservice Swagger UI**: `http://127.0.0.1:8001/docs`
 - **Seeded Demo Accounts**:
